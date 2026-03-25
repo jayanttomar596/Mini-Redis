@@ -12,7 +12,7 @@ using namespace std;
 void Server::start(int port) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (server_fd == 0) {
+    if (server_fd < 0) {
         perror("Socket failed");
         return;
     }
@@ -46,31 +46,47 @@ void Server::start(int port) {
 
         cout << "Client connected\n";
 
-        char buffer[1024] = {0};
-        int valread = read(client_socket, buffer, 1024);
+        char buffer[1024];
 
-        string input(buffer);
+        while (true) {
+            memset(buffer, 0, sizeof(buffer));
 
-        vector<string> tokens = CommandParser::parse(input);
+            int valread = read(client_socket, buffer, 1024);
 
-        string response;
+            if (valread <= 0) {
+                cout << "Client disconnected\n";
+                close(client_socket);
+                break;
+            }
 
-        if (tokens[0] == "SET" && tokens.size() == 3) {
-            kv.set(tokens[1], tokens[2]);
-            response = "OK\n";
+            string input(buffer, valread);
+
+            // remove newline characters
+            if (!input.empty() && input.back() == '\n') input.pop_back();
+            if (!input.empty() && input.back() == '\r') input.pop_back();
+
+            vector<string> tokens = CommandParser::parse(input);
+
+            if (tokens.empty()) continue;
+
+            string response;
+
+            if (tokens[0] == "SET" && tokens.size() == 3) {
+                kv.set(tokens[1], tokens[2]);
+                response = "OK\n";
+            }
+            else if (tokens[0] == "GET" && tokens.size() == 2) {
+                response = kv.get(tokens[1]) + "\n";
+            }
+            else if (tokens[0] == "DEL" && tokens.size() == 2) {
+                kv.del(tokens[1]);
+                response = "Deleted\n";
+            }
+            else {
+                response = "Invalid Command\n";
+            }
+
+            send(client_socket, response.c_str(), response.size(), 0);
         }
-        else if (tokens[0] == "GET" && tokens.size() == 2) {
-            response = kv.get(tokens[1]) + "\n";
-        }
-        else if (tokens[0] == "DEL" && tokens.size() == 2) {
-            kv.del(tokens[1]);
-            response = "Deleted\n";
-        }
-        else {
-            response = "Invalid Command\n";
-        }
-
-        send(client_socket, response.c_str(), response.size(), 0);
-        close(client_socket);
     }
 }
