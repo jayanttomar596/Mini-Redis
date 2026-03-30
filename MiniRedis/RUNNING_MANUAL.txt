@@ -2,7 +2,7 @@
 
 Run in project folder:
 
-g++ -std=c++20 main.cpp store/KVStore.cpp parser/CommandParser.cpp server/Server.cpp -o app
+g++ -std=c++20 main.cpp store/KVStore.cpp parser/CommandParser.cpp server/Server.cpp utils/Logger.cpp -o app
 g++ -std=c++20 client.cpp -o client
 
 

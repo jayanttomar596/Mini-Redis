@@ -1,0 +1,4 @@
+SET name Jayant
+SET value 5
+DEL name
+DEL value

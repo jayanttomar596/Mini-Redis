@@ -2,12 +2,38 @@
 #include "../parser/CommandParser.h"
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include "../utils/Logger.h"
 
 using namespace std;
+
+
+
+
+void loadData(KVStore &kv) {
+    std::ifstream file("data.log");
+    std::string line;
+
+    while (getline(file, line)) {
+        std::vector<std::string> tokens = CommandParser::parse(line);
+
+        if (tokens.empty()) continue;
+
+        if (tokens[0] == "SET" && tokens.size() == 3) {
+            kv.set(tokens[1], tokens[2]);
+        }
+        else if (tokens[0] == "DEL" && tokens.size() == 2) {
+            kv.del(tokens[1]);
+        }
+    }
+}
+
+
+
 
 void Server::start(int port) {
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -31,6 +57,8 @@ void Server::start(int port) {
         perror("Listen failed");
         return;
     }
+
+    loadData(kv);
 
     cout << "Server started on port " << port << endl;
 
@@ -73,6 +101,9 @@ void Server::start(int port) {
 
             if (tokens[0] == "SET" && tokens.size() == 3) {
                 kv.set(tokens[1], tokens[2]);
+
+                Logger::log("SET " + tokens[1] + " " + tokens[2]);
+
                 response = "OK\n";
             }
             else if (tokens[0] == "GET" && tokens.size() == 2) {
@@ -80,6 +111,9 @@ void Server::start(int port) {
             }
             else if (tokens[0] == "DEL" && tokens.size() == 2) {
                 kv.del(tokens[1]);
+
+                Logger::log("DEL " + tokens[1]);
+
                 response = "Deleted\n";
             }
             else {
