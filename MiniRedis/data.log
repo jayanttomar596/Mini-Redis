@@ -13,3 +13,5 @@ SET value 28
 SET name Jayant
 SET name Rudra
 DEL name
+SET name Jayant
+DEL name
