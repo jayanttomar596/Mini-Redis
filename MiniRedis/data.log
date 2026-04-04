@@ -15,3 +15,10 @@ SET name Rudra
 DEL name
 SET name Jayant
 DEL name
+SET A 1
+SET B 2
+SET C 3
+SET D 4
+SET E 5
+SET F 6
+SET G 7
