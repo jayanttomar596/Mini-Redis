@@ -25,8 +25,16 @@ void loadData(KVStore &kv) {
 
         if (tokens.empty()) continue;
 
-        if (tokens[0] == "SET" && tokens.size() == 3) {
-            kv.set(tokens[1], tokens[2]);
+        if (tokens[0] == "SET") {
+            if (tokens.size() == 5 && tokens[3] == "EX") {
+                int ttl = stoi(tokens[4]);
+                kv.set(tokens[1], tokens[2], ttl);
+                Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
+            }
+            else {
+                kv.set(tokens[1], tokens[2]);
+                Logger::log("SET " + tokens[1] + " " + tokens[2]);
+            }
         }
         else if (tokens[0] == "DEL" && tokens.size() == 2) {
             kv.del(tokens[1]);
@@ -78,15 +86,30 @@ void handleClient(int client_socket, KVStore &kv) {
 
             string response;
 
-            if (tokens[0] == "SET" && tokens.size() == 3) {
-                kv.set(tokens[1], tokens[2]);
-                Logger::log("SET " + tokens[1] + " " + tokens[2]);
-                response = "OK\n";
+
+            if (tokens[0] == "SET") {
+
+                if (tokens.size() == 5 && tokens[3] == "EX") {
+                    int ttl = stoi(tokens[4]);
+                    kv.set(tokens[1], tokens[2], ttl);
+
+                    Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
+                    response = "OK\n";
+                }
+                else if (tokens.size() == 3) {
+                    kv.set(tokens[1], tokens[2]);
+
+                    Logger::log("SET " + tokens[1] + " " + tokens[2]);
+                    response = "OK\n";
+                }
+                else {
+                    response = "Invalid Command\n";
+                }
             }
-            else if (tokens[0] == "GET") {
+            else if (tokens[0] == "GET" && tokens.size() == 2) {
                 response = kv.get(tokens[1]) + "\n";
             }
-            else if (tokens[0] == "DEL") {
+            else if (tokens[0] == "DEL" && tokens.size() == 2) {
                 kv.del(tokens[1]);
                 Logger::log("DEL " + tokens[1]);
                 response = "Deleted\n";

@@ -1,29 +1,39 @@
 #pragma once
 #include <unordered_map>
-#include <mutex>
-#include <list>
 #include <string>
+#include <list>
+#include <mutex>
+#include <chrono>
+
+
+
 
 
 
 
 class KVStore {
 private:
-    int capacity = 5;  //small for testing
+    int capacity = 5;
 
-    // key → (value, iterator in list)
-    std::unordered_map<std::string, std::pair<std::string, std::list<std::string>::iterator>> store;
+    struct Node {
+        std::string value;
+        long long expiry;   // 🔥 epoch time (ms), -1 = no expiry
+        std::list<std::string>::iterator it;
+    };
 
-    // doubly linked list (most recent at front)
+    std::unordered_map<std::string, Node> store;
     std::list<std::string> lru;
 
     std::mutex mtx;
 
+    long long getCurrentTime();  // helper
+
 public:
-    void set(const std::string &key, const std::string &value);
+    void set(const std::string &key, const std::string &value, int ttl = -1); // 🔥 updated
     std::string get(const std::string &key);
     void del(const std::string &key);
 };
+
 
 
 
