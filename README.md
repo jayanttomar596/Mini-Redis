@@ -1,4 +1,4 @@
-# 🚀 Mini Redis (In-Memory Key-Value Store in C++)
+# Mini Redis (In-Memory Key-Value Store in C++)
 
 ### Multithreaded TCP Server • LRU Cache • TTL Expiry • WAL Persistence
 
@@ -19,31 +19,31 @@ The system is designed with **clean modular architecture, concurrency control, a
 
 # Project Highlights
 
-## ⚡ Fast Key-Value Store
+## Fast Key-Value Store
 - Uses **unordered_map (hash map)** for near O(1) access
 - Supports core operations:
   - `SET key value`
   - `GET key`
   - `DEL key`
 
-## 🌐 TCP Server (Client-Server Architecture)
+## TCP Server (Client-Server Architecture)
 - Built using low-level **socket programming**
 - Uses:
   - `socket()`, `bind()`, `listen()`, `accept()`
 - Enables remote command execution via clients
 
-## 🧵 Multithreaded Request Handling
+## Multithreaded Request Handling
 - Each client handled in a **separate thread**
 - Supports concurrent connections
 - Improves system scalability
 
-## 🔒 Thread Safety
+## Thread Safety
 - Implemented using:
   - `std::mutex`
   - `lock_guard`
 - Prevents race conditions in shared data access
 
-## 💾 Write-Ahead Logging (Persistence)
+## Write-Ahead Logging (Persistence)
 - All write operations logged to:
 
 
@@ -54,13 +54,13 @@ data.log
 - Server replays log
 - Restores previous state
 
-## 🧠 LRU Cache (Memory Management)
+## LRU Cache (Memory Management)
 - Implements **Least Recently Used eviction**
 - Uses:
 - `unordered_map` + `doubly linked list`
 - Automatically removes least used keys when capacity is exceeded
 
-## ⏳ TTL Expiry (Time-To-Live)
+## TTL Expiry (Time-To-Live)
 - Supports key expiration:
 
 
@@ -75,7 +75,8 @@ SET key value EX seconds
 
 # System Architecture
 
-'''
+```
+
 Client
 ↓
 TCP Server
@@ -85,7 +86,8 @@ Command Parser
 KV Store (RAM)
 ↓
 WAL (data.log)
-'''
+
+```
 
 
 
@@ -105,7 +107,7 @@ WAL (data.log)
 
 # Project Structure
 
-'''
+```
 MiniRedis/
 │
 ├── store/
@@ -127,7 +129,7 @@ MiniRedis/
 ├── main.cpp
 ├── client.cpp
 └── data.log
-'''
+```
 
 
 
@@ -201,12 +203,16 @@ Steps:
 # Example Commands
 
 ### Basic Operations
+```
 SET name Jayant
 GET name
 DEL name
+```
 
 ### TTL Example
+```
 SET otp 1234 EX 10
+```
 
 
 
