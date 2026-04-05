@@ -13,7 +13,7 @@ The system is designed with **clean modular architecture, concurrency control, a
 # Demo
 
 ## Working Video
-(Add your demo video link here)
+https://youtu.be/kNOoiKyg9EY
 
 ---
 
