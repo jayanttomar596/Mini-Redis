@@ -54,6 +54,7 @@ void loadData(KVStore &kv) {
 
 void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mutex &slave_mtx) {
     bool is_slave = false;
+    bool identified = false; 
     char buffer[1024];
     string pending = "";
 
@@ -63,32 +64,54 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
         int valread = recv(client_socket, buffer, 1024, 0);
 
         if (valread == 0) {
-            cout << "Client disconnected\n";
+            if (is_slave) {
+                cout << "Slave disconnected\n";
+            } else {
+                cout << "Client disconnected\n";
+            }
             close(client_socket);
             break;
         }
         if (valread < 0) {
             perror("recv failed");
+            if (is_slave) cout << "Slave disconnected\n";
+            else cout << "Client disconnected\n";
             close(client_socket);
             break;
         }
 
         pending += string(buffer, valread);
 
+        
+
         size_t pos;
         while ((pos = pending.find('\n')) != string::npos) {
             string line = pending.substr(0, pos);
+
             pending.erase(0, pos + 1);
 
-            if (line == "SLAVE") {
-                cout << "Slave registered\n";
-                {
-                    std::lock_guard<std::mutex> lock(slave_mtx);
-                    slaves.push_back(client_socket);
+            // HANDLE HANDSHAKE FIRST
+            if (!identified) {
+                if (line == "SLAVE") {
+                    {
+                        std::lock_guard<std::mutex> lock(slave_mtx);
+                        slaves.push_back(client_socket);
+                    }
+                    is_slave = true;
+                    cout << "Slave connected\n";
                 }
-                is_slave = true;
+                else if (line == "CLIENT") {
+                    cout << "Client connected\n";
+                }
+                else {
+                    // fallback if no handshake
+                    cout << "Unknown connection, treating as client\n";
+                }
+
+                identified = true;
                 continue;
             }
+
 
             if (!line.empty() && line.back() == '\r') {
                 line.pop_back();
@@ -229,7 +252,7 @@ void Server::start(int port) {
             continue;
         }
 
-        cout << "Client connected\n";
+        // cout << "Client connected\n";
 
         // create thread
         thread t([this, client_socket]() {

@@ -28,6 +28,8 @@ int main() {
     }
 
     cout << "Connected to server\n";
+    string hello = "CLIENT\n";
+    send(sock, hello.c_str(), hello.size(), 0);
 
     char buffer[1024];
 
