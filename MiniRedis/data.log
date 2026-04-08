@@ -11,3 +11,5 @@ SET OTP 1234 EX 2
 SET OTP 1234 EX 30
 DEL name
 SET OS 1
+SET name Jayant
+DEL name
