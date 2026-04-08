@@ -36,6 +36,16 @@ int main() {
         string cmd;
         getline(cin, cmd);
 
+        // ignore empty / whitespace input
+        bool onlySpaces = true;
+        for (char c : cmd) {
+            if (!isspace(c)) {
+                onlySpaces = false;
+                break;
+            }
+        }
+        if (onlySpaces) continue;
+
         if (cmd == "EXIT") {
             close(sock);
             break;

@@ -26,16 +26,21 @@ void loadData(KVStore &kv) {
 
         if (tokens.empty()) continue;
 
-        if (tokens[0] == "SET") {
+        if (tokens.size() >= 1 && tokens[0] == "SET") {
             if (tokens.size() == 5 && tokens[3] == "EX") {
-                int ttl = stoi(tokens[4]);
+                int ttl;
+                try {
+                    ttl = stoi(tokens[4]);
+                } catch (...) {
+                    continue;
+                }
                 kv.set(tokens[1], tokens[2], ttl);
             }
             else if (tokens.size() == 3) {
                 kv.set(tokens[1], tokens[2]);
             }
         }
-        else if (tokens[0] == "DEL" && tokens.size() == 2) {
+        else if (tokens.size() == 2 && tokens[0] == "DEL") {
             kv.del(tokens[1]);
         }
     }
@@ -96,10 +101,17 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
             string response;
 
 
-            if (tokens[0] == "SET") {
+            if (tokens.size() >= 1 && tokens[0] == "SET") {
 
                 if (tokens.size() == 5 && tokens[3] == "EX") {
-                    int ttl = stoi(tokens[4]);
+                    int ttl;
+                    try {
+                        ttl = stoi(tokens[4]);
+                    } catch (...) {
+                        response = "Invalid TTL\n";
+                        send(client_socket, response.c_str(), response.size(), 0);
+                        continue;
+                    }
                     kv.set(tokens[1], tokens[2], ttl);
 
                     Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
@@ -126,10 +138,10 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
                     }
                 }
             }
-            else if (tokens[0] == "GET" && tokens.size() == 2) {
+            else if (tokens.size() == 2 && tokens[0] == "GET") {
                 response = kv.get(tokens[1]) + "\n";
             }
-            else if (tokens[0] == "DEL" && tokens.size() == 2) {
+            else if (tokens.size() == 2 && tokens[0] == "DEL") {
                 kv.del(tokens[1]);
 
                 Logger::log("DEL " + tokens[1]);
@@ -267,9 +279,16 @@ void Server::startAsSlave(const std::string &ip, int port) {
 
             if (tokens.empty()) continue;
 
-            if (tokens[0] == "SET") {
+
+            if (tokens.size() >= 1 && tokens[0] == "SET") {
                 if (tokens.size() == 5 && tokens[3] == "EX") {
-                    kv.set(tokens[1], tokens[2], stoi(tokens[4]));
+                    int ttl;
+                    try {
+                        ttl = stoi(tokens[4]);
+                    } catch (...) {
+                        continue;
+                    }
+                    kv.set(tokens[1], tokens[2], ttl);
                 }
                 else if (tokens.size() == 3) {
                     kv.set(tokens[1], tokens[2]);
