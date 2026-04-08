@@ -22,10 +22,32 @@ void KVStore::set(const std::string &key, const std::string &value, int ttl) {
     if (store.find(key) != store.end()) {
         lru.erase(store[key].it);
     }
-    else if (store.size() >= capacity) {
-        std::string lru_key = lru.back();
-        lru.pop_back();
-        store.erase(lru_key);
+    else {
+        // Step 1: Clean expired keys from LRU (from back)
+        while (!lru.empty()) {
+            std::string key_to_check = lru.back();
+            auto it = store.find(key_to_check);
+
+            if (it != store.end()) {
+                long long expiry = it->second.expiry;
+
+                if (expiry != -1 && getCurrentTime() > expiry) {
+                    lru.pop_back();
+                    store.erase(it);
+                } else {
+                    break; // stop at first valid key
+                }
+            } else {
+                lru.pop_back();
+            }
+        }
+
+        // Step 2: If still full → evict LRU
+        if (store.size() >= capacity) {
+            std::string lru_key = lru.back();
+            lru.pop_back();
+            store.erase(lru_key);
+        }
     }
 
     lru.push_front(key);
