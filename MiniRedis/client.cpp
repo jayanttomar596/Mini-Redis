@@ -58,16 +58,28 @@ int main() {
             break;
         }
 
-        memset(buffer, 0, sizeof(buffer));
+        static string pending = "";
 
-        int valread = recv(sock, buffer, 1024, 0);
+        while (true) {
+            int valread = recv(sock, buffer, 1024, 0);
 
-        if (valread <= 0) {
-            cout << "Server closed connection\n";
-            break;
+            if (valread <= 0) {
+                cout << "Server closed connection\n";
+                break;
+            }
+
+            pending += string(buffer, valread);
+
+            size_t pos;
+            while ((pos = pending.find('\n')) != string::npos) {
+                string line = pending.substr(0, pos);
+                pending.erase(0, pos + 1);
+                cout << line << endl;
+            }
+
+            // break after at least one full response
+            if (pending.empty()) break;
         }
-
-        cout << string(buffer, valread);
     }
 
     return 0;
