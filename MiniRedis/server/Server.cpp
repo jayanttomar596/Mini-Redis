@@ -126,6 +126,8 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
 
             if (tokens.size() >= 1 && tokens[0] == "SET") {
 
+                bool is_valid = false;
+
                 if (tokens.size() == 5 && tokens[3] == "EX") {
                     int ttl;
                     try {
@@ -139,19 +141,22 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
 
                     Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
                     response = "OK\n";
+
+                    is_valid = true; 
                 }
                 else if (tokens.size() == 3) {
                     kv.set(tokens[1], tokens[2]);
 
                     Logger::log("SET " + tokens[1] + " " + tokens[2]);
                     response = "OK\n";
+                    is_valid = true; 
                 }
                 else {
                     response = "Invalid Command\n";
                 }
 
                 // FORWARD TO SLAVES
-                if (!is_slave) {
+                if (!is_slave && is_valid) {
                     {
                         std::lock_guard<std::mutex> lock(slave_mtx);
                         std::string msg = line + "\n";
@@ -171,13 +176,14 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
                 response = kv.get(tokens[1]) + "\n";
             }
             else if (tokens.size() == 2 && tokens[0] == "DEL") {
+                bool is_valid = true; 
                 kv.del(tokens[1]);
 
                 Logger::log("DEL " + tokens[1]);
                 response = "Deleted\n";
 
                 // FORWARD
-                if (!is_slave) {
+                if (!is_slave && is_valid) {
                     {
                         std::lock_guard<std::mutex> lock(slave_mtx);
                         std::string msg = line + "\n";
