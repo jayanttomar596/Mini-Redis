@@ -1,104 +1,13 @@
 SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
 DEL name
+SET OTP 1234 EX 2
 SET name Jayant
+SET OTP 1234 EX 2
+SET OTP 1234 EX 30
 SET name Jayant
+SET OTP 1234 EX 2
 SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-DEL NAME
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
+SET OTP 1234 EX 2
+SET OTP 1234 EX 30
 DEL name
-DEL name
-SET name Jayant
-SET OTP 1234 EX 5
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET OTP 1234 EX 5
-SET help 1
-DEL help
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET OTP 1234 EX 5
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET name Jayant
-SET NAME JAYANT
-SET name Jayant
-SET OTP 1234 EX 5
-SET help 1
-DEL name
+SET OS 1

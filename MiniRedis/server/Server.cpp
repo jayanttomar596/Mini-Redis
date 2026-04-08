@@ -29,11 +29,9 @@ void loadData(KVStore &kv) {
             if (tokens.size() == 5 && tokens[3] == "EX") {
                 int ttl = stoi(tokens[4]);
                 kv.set(tokens[1], tokens[2], ttl);
-                Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
             }
-            else {
+            else if (tokens.size() == 3) {
                 kv.set(tokens[1], tokens[2]);
-                Logger::log("SET " + tokens[1] + " " + tokens[2]);
             }
         }
         else if (tokens[0] == "DEL" && tokens.size() == 2) {
