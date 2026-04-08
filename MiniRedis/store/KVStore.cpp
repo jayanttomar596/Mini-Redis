@@ -19,21 +19,23 @@ void KVStore::set(const std::string &key, const std::string &value, int ttl) {
         expiry_time = getCurrentTime() + ttl * 1000;
     }
 
-    if (store.find(key) != store.end()) {
-        lru.erase(store[key].it);
+    auto it = store.find(key);
+
+    if (it != store.end()) {
+        lru.erase(it->second.it);
     }
     else {
         // Step 1: Clean expired keys from LRU (from back)
         while (!lru.empty()) {
             std::string key_to_check = lru.back();
-            auto it = store.find(key_to_check);
+            auto it2 = store.find(key_to_check);
 
-            if (it != store.end()) {
-                long long expiry = it->second.expiry;
+            if (it2 != store.end()) {
+                long long expiry = it2->second.expiry;
 
                 if (expiry != -1 && getCurrentTime() > expiry) {
                     lru.pop_back();
-                    store.erase(it);
+                    store.erase(it2);
                 } else {
                     break; // stop at first valid key
                 }
@@ -61,26 +63,26 @@ void KVStore::set(const std::string &key, const std::string &value, int ttl) {
 std::string KVStore::get(const std::string &key) {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (store.find(key) == store.end()) {
+    auto it = store.find(key);
+
+    if (it == store.end()) {
         return "NULL";
     }
 
-    // 🔥 CHECK EXPIRY
-    long long expiry = store[key].expiry;
+    long long expiry = it->second.expiry;
 
     if (expiry != -1 && getCurrentTime() > expiry) {
-        // expired → delete
-        lru.erase(store[key].it);
-        store.erase(key);
+        lru.erase(it->second.it);
+        store.erase(it);
         return "NULL";
     }
 
-    // move to front (LRU)
-    lru.erase(store[key].it);
+    // move to front
+    lru.erase(it->second.it);
     lru.push_front(key);
-    store[key].it = lru.begin();
+    it->second.it = lru.begin();
 
-    return store[key].value;
+    return it->second.value;
 }
 
 
@@ -89,9 +91,11 @@ std::string KVStore::get(const std::string &key) {
 void KVStore::del(const std::string &key) {
     std::lock_guard<std::mutex> lock(mtx);
 
-    if (store.find(key) != store.end()) {
-        lru.erase(store[key].it);
-        store.erase(key);
+    auto it = store.find(key);
+
+    if (it != store.end()) {
+        lru.erase(it->second.it);
+        store.erase(it);
     }
 }
 
