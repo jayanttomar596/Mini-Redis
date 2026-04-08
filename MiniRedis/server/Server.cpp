@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <cstring>
 #include <thread>
+#include <mutex>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "../utils/Logger.h"
@@ -46,7 +47,7 @@ void loadData(KVStore &kv) {
 
 
 
-void handleClient(int client_socket, KVStore &kv , vector<int> &slaves) {
+void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mutex &slave_mtx) {
     bool is_slave = false;
     char buffer[1024];
     string pending = "";
@@ -76,7 +77,10 @@ void handleClient(int client_socket, KVStore &kv , vector<int> &slaves) {
 
             if (line == "SLAVE") {
                 cout << "Slave registered\n";
-                slaves.push_back(client_socket);
+                {
+                    std::lock_guard<std::mutex> lock(slave_mtx);
+                    slaves.push_back(client_socket);
+                }
                 is_slave = true;
                 continue;
             }
@@ -113,8 +117,12 @@ void handleClient(int client_socket, KVStore &kv , vector<int> &slaves) {
 
                 // FORWARD TO SLAVES
                 if (!is_slave) {
-                    for (int s : slaves) {
-                        send(s, (line + "\n").c_str(), line.size() + 1, 0);
+                    {
+                        std::lock_guard<std::mutex> lock(slave_mtx);
+                        std::string msg = line + "\n";
+                        for (int s : slaves) {
+                            send(s, msg.c_str(), msg.size(), 0);
+                        }
                     }
                 }
             }
@@ -129,8 +137,12 @@ void handleClient(int client_socket, KVStore &kv , vector<int> &slaves) {
 
                 // FORWARD
                 if (!is_slave) {
-                    for (int s : slaves) {
-                        send(s, (line + "\n").c_str(), line.size() + 1, 0);
+                    {
+                        std::lock_guard<std::mutex> lock(slave_mtx);
+                        std::string msg = line + "\n";
+                        for (int s : slaves) {
+                            send(s, msg.c_str(), msg.size(), 0);
+                        }
                     }
                 }
             }
@@ -197,7 +209,7 @@ void Server::start(int port) {
 
         // create thread
         thread t([this, client_socket]() {
-            handleClient(client_socket, this->kv, this->slave_sockets);
+            handleClient(client_socket, this->kv, this->slave_sockets, this->slave_mtx);
         });
         t.detach();
     }

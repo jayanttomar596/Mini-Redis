@@ -7,6 +7,7 @@ private:
     int server_fd;
     KVStore kv;
     std::vector<int> slave_sockets; // store slaves
+    std::mutex slave_mtx;
 
 public:
     void start(int port);
