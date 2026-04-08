@@ -132,8 +132,14 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
                     {
                         std::lock_guard<std::mutex> lock(slave_mtx);
                         std::string msg = line + "\n";
-                        for (int s : slaves) {
-                            send(s, msg.c_str(), msg.size(), 0);
+                        for (auto it = slaves.begin(); it != slaves.end(); ) {
+                            int s = *it;
+                            if (send(s, msg.c_str(), msg.size(), 0) < 0) {
+                                close(s);  // close dead socket
+                                it = slaves.erase(it);  // remove safely
+                            } else {
+                                ++it;
+                            }
                         }
                     }
                 }
@@ -152,8 +158,14 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
                     {
                         std::lock_guard<std::mutex> lock(slave_mtx);
                         std::string msg = line + "\n";
-                        for (int s : slaves) {
-                            send(s, msg.c_str(), msg.size(), 0);
+                        for (auto it = slaves.begin(); it != slaves.end(); ) {
+                            int s = *it;
+                            if (send(s, msg.c_str(), msg.size(), 0) < 0) {
+                                close(s);  // close dead socket
+                                it = slaves.erase(it);  // remove safely
+                            } else {
+                                ++it;
+                            }
                         }
                     }
                 }
