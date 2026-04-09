@@ -17,7 +17,7 @@ private:
 
     struct Node {
         std::string value;
-        long long expiry;   // 🔥 epoch time (ms), -1 = no expiry
+        long long expiry;   // epoch time (ms), -1 = no expiry
         std::list<std::string>::iterator it;
     };
 
@@ -29,7 +29,8 @@ private:
     long long getCurrentTime();  // helper
 
 public:
-    void set(const std::string &key, const std::string &value, int ttl = -1); // 🔥 updated
+    void set(const std::string &key, const std::string &value, int ttl = -1); // updated
+    void cleanExpired();
     std::string get(const std::string &key);
     void del(const std::string &key);
 };

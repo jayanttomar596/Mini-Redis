@@ -8,6 +8,7 @@
 #include <cstring>
 #include <thread>
 #include <mutex>
+#include <chrono>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "../utils/Logger.h"
@@ -254,6 +255,14 @@ void Server::start(int port) {
     }
 
     loadData(kv);
+
+    thread cleaner([this]() {
+        while (true) {
+            this->kv.cleanExpired();
+            this_thread::sleep_for(chrono::seconds(2));
+        }
+    });
+    cleaner.detach();
 
     cout << "Server started on port " << port << endl;
 

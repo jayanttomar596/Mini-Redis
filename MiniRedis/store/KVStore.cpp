@@ -102,3 +102,27 @@ void KVStore::del(const std::string &key) {
 
 
 
+
+
+void KVStore::cleanExpired() {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    long long now = getCurrentTime();
+
+    for (auto it = store.begin(); it != store.end(); ) {
+        long long expiry = it->second.expiry;
+
+        if (expiry != -1 && now > expiry) {
+            lru.erase(it->second.it);
+            it = store.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+
+
+
+
