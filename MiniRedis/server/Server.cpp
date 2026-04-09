@@ -25,6 +25,18 @@ void loadData(KVStore &kv) {
         std::vector<std::string> tokens = CommandParser::parse(line);
 
         if (tokens.empty()) continue;
+  
+        // skip incomplete/corrupted commands
+        if (tokens[0] == "SET") {
+            if (tokens.size() == 3) { }
+            else if (tokens.size() == 5 && tokens[3] == "EX") { }
+            else {
+                continue;
+            }
+        }
+        if (tokens[0] == "DEL" && tokens.size() != 2) {
+            continue;
+        }
 
         if (tokens.size() >= 1 && tokens[0] == "SET") {
             if (tokens.size() == 5 && tokens[3] == "EX") {
