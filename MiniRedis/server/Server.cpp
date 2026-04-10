@@ -3,8 +3,10 @@
 
 #include <iostream>
 #include <fstream>
+#include <csignal>
 #include <vector>
 #include <sys/socket.h>
+#include <cerrno>
 #include <cstring>
 #include <thread>
 #include <mutex>
@@ -14,6 +16,34 @@
 #include "../utils/Logger.h"
 
 using namespace std;
+
+
+Server* global_server = nullptr;
+
+
+
+// Signal Handler
+
+
+
+void Server::stop() {
+    running = false;
+    close(server_fd);
+}
+
+bool Server::isRunning() {
+    return running;
+}
+
+
+void signalHandler(int signum) {
+    cout << "\nShutting down server...\n";
+
+    if (global_server) {
+        global_server->stop(); // IMPORTANT
+    }
+}
+
 
 
 
@@ -76,7 +106,7 @@ void handleClient(int client_socket,
     char buffer[1024];
     string pending = "";
 
-    while (true) {
+    while (global_server->isRunning()) {
         memset(buffer, 0, sizeof(buffer));
 
         int valread = recv(client_socket, buffer, 1024, 0);
@@ -243,6 +273,8 @@ void handleClient(int client_socket,
 
 
 void Server::start(int port) {
+    global_server = this;
+    signal(SIGINT, signalHandler);
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     int opt = 1;
@@ -272,7 +304,7 @@ void Server::start(int port) {
     loadData(kv);
 
     thread cleaner([this]() {
-        while (true) {
+        while (isRunning()) {
             this->kv.cleanExpired();
             this_thread::sleep_for(chrono::seconds(2));
         }
@@ -283,13 +315,21 @@ void Server::start(int port) {
 
     // int addrlen = sizeof(address);
 
-    while (true) {
+    while (isRunning()) {
         sockaddr_in client_addr;
         socklen_t addrlen = sizeof(client_addr);
 
         int client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addrlen);
 
         if (client_socket < 0) {
+            if (!isRunning()) {
+                break;  // shutdown triggered
+            }
+
+            if (errno == EINTR) {
+                continue;  // interrupted by signal → retry
+            }
+
             perror("Accept failed");
             continue;
         }
@@ -321,6 +361,8 @@ void Server::start(int port) {
         });
         t.detach();
     }
+
+    cout << "Server stopped cleanly\n";
 }
 
 
