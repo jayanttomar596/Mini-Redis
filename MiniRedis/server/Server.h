@@ -8,6 +8,10 @@ private:
     KVStore kv;
     std::vector<int> slave_sockets; // store slaves
     std::mutex slave_mtx;
+    int MAX_CLIENTS = 100;
+    int current_clients = 0;
+
+    std::mutex client_mtx;
 
 public:
     void start(int port);

@@ -65,7 +65,12 @@ void loadData(KVStore &kv) {
 
 
 
-void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mutex &slave_mtx) {
+void handleClient(int client_socket,
+                  KVStore &kv,
+                  vector<int> &slaves,
+                  std::mutex &slave_mtx,
+                  int &current_clients,
+                  std::mutex &client_mtx) {
     bool is_slave = false;
     bool identified = false; 
     char buffer[1024];
@@ -77,18 +82,28 @@ void handleClient(int client_socket, KVStore &kv, vector<int> &slaves, std::mute
         int valread = recv(client_socket, buffer, 1024, 0);
 
         if (valread == 0) {
-            if (is_slave) {
-                cout << "Slave disconnected\n";
-            } else {
-                cout << "Client disconnected\n";
-            }
-            close(client_socket);
-            break;
+        if (is_slave) cout << "Slave disconnected\n";
+        else cout << "Client disconnected\n";
+
+        {
+            std::lock_guard<std::mutex> lock(client_mtx);
+            current_clients--;
         }
+
+        close(client_socket);
+        break;
+    }
         if (valread < 0) {
             perror("recv failed");
+
             if (is_slave) cout << "Slave disconnected\n";
             else cout << "Client disconnected\n";
+
+            {
+                std::lock_guard<std::mutex> lock(client_mtx);
+                current_clients--;
+            }
+
             close(client_socket);
             break;
         }
@@ -279,11 +294,30 @@ void Server::start(int port) {
             continue;
         }
 
+        {
+            std::lock_guard<std::mutex> lock(client_mtx);
+
+            if (current_clients >= MAX_CLIENTS) {
+                std::string msg = "Server busy\n";
+                send(client_socket, msg.c_str(), msg.size(), 0);
+                close(client_socket);
+                continue;
+            }
+
+            current_clients++;
+        }
+
+
         // cout << "Client connected\n";
 
         // create thread
         thread t([this, client_socket]() {
-            handleClient(client_socket, this->kv, this->slave_sockets, this->slave_mtx);
+            handleClient(client_socket,
+             this->kv,
+             this->slave_sockets,
+             this->slave_mtx,
+             this->current_clients,
+             this->client_mtx);
         });
         t.detach();
     }
