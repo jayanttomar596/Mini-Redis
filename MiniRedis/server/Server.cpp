@@ -37,7 +37,7 @@ bool Server::isRunning() {
 
 
 void signalHandler(int signum) {
-    cout << "\nShutting down server...\n";
+    Logger::info("Shutting down server...");
 
     if (global_server) {
         global_server->stop(); // IMPORTANT
@@ -112,8 +112,9 @@ void handleClient(int client_socket,
         int valread = recv(client_socket, buffer, 1024, 0);
 
         if (valread == 0) {
-        if (is_slave) cout << "Slave disconnected\n";
-        else cout << "Client disconnected\n";
+            if (is_slave) Logger::info("Slave disconnected");
+            else Logger::info("Client disconnected");
+
 
         {
             std::lock_guard<std::mutex> lock(client_mtx);
@@ -124,10 +125,10 @@ void handleClient(int client_socket,
         break;
     }
         if (valread < 0) {
-            perror("recv failed");
+            Logger::error("recv failed: " + string(strerror(errno)));
 
-            if (is_slave) cout << "Slave disconnected\n";
-            else cout << "Client disconnected\n";
+            if (is_slave) Logger::info("Slave disconnected");
+            else Logger::info("Client disconnected");
 
             {
                 std::lock_guard<std::mutex> lock(client_mtx);
@@ -156,14 +157,16 @@ void handleClient(int client_socket,
                         slaves.push_back(client_socket);
                     }
                     is_slave = true;
-                    cout << "Slave connected\n";
+                    // cout << "Slave connected\n";
+                    Logger::info("Slave connected");
                 }
                 else if (line == "CLIENT") {
-                    cout << "Client connected\n";
+                    // cout << "Client connected\n";
+                    Logger::info("Client connected: socket " + to_string(client_socket));
                 }
                 else {
                     // fallback if no handshake
-                    cout << "Unknown connection, treating as client\n";
+                    Logger::info("Unknown connection, treating as client");
                 }
 
                 identified = true;
@@ -196,8 +199,16 @@ void handleClient(int client_socket,
                         continue;
                     }
                     kv.set(tokens[1], tokens[2], ttl);
+                    if (!is_slave) {
+                        ofstream file("data.log", ios::app);
+                        file << line << "\n";
+                    }
 
-                    Logger::log("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
+                    if (tokens.size() == 5 && tokens[3] == "EX") {
+                        Logger::debug("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
+                    } else {
+                        Logger::debug("SET " + tokens[1] + " " + tokens[2]);
+                    }
                     response = "OK\n";
 
                     is_valid = true; 
@@ -205,7 +216,12 @@ void handleClient(int client_socket,
                 else if (tokens.size() == 3) {
                     kv.set(tokens[1], tokens[2]);
 
-                    Logger::log("SET " + tokens[1] + " " + tokens[2]);
+                    if (!is_slave) {
+                        ofstream file("data.log", ios::app);
+                        file << line << "\n";
+                    }
+
+                    Logger::debug("SET " + tokens[1] + " " + tokens[2]);
                     response = "OK\n";
                     is_valid = true; 
                 }
@@ -236,8 +252,12 @@ void handleClient(int client_socket,
             else if (tokens.size() == 2 && tokens[0] == "DEL") {
                 bool is_valid = true; 
                 kv.del(tokens[1]);
+                if (!is_slave) {
+                    ofstream file("data.log", ios::app);
+                    file << line << "\n";
+                }
 
-                Logger::log("DEL " + tokens[1]);
+                Logger::debug("DEL " + tokens[1]);
                 response = "Deleted\n";
 
                 // FORWARD
@@ -311,7 +331,8 @@ void Server::start(int port) {
     });
     cleaner.detach();
 
-    cout << "Server started on port " << port << endl;
+    // cout << "Server started on port " << port << endl;
+    Logger::info("Server started on port " + to_string(port));
 
     // int addrlen = sizeof(address);
 
@@ -330,7 +351,7 @@ void Server::start(int port) {
                 continue;  // interrupted by signal → retry
             }
 
-            perror("Accept failed");
+            Logger::error("Accept failed: " + string(strerror(errno)));
             continue;
         }
 
@@ -369,7 +390,7 @@ void Server::start(int port) {
         t.detach();
     }
 
-    cout << "Server stopped cleanly\n";
+    Logger::info("Server stopped cleanly");
 }
 
 
