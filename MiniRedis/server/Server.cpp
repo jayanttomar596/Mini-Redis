@@ -204,11 +204,7 @@ void handleClient(int client_socket,
                         file << line << "\n";
                     }
 
-                    if (tokens.size() == 5 && tokens[3] == "EX") {
-                        Logger::debug("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
-                    } else {
-                        Logger::debug("SET " + tokens[1] + " " + tokens[2]);
-                    }
+                    Logger::debug("SET " + tokens[1] + " " + tokens[2] + " EX " + tokens[4]);
                     response = "OK\n";
 
                     is_valid = true; 
@@ -321,6 +317,7 @@ void Server::start(int port) {
         return;
     }
 
+    kv.loadSnapshot();
     loadData(kv);
 
     thread cleaner([this]() {
@@ -330,6 +327,16 @@ void Server::start(int port) {
         }
     });
     cleaner.detach();
+
+
+    thread snapshotThread([this]() {
+        while (isRunning()) {
+            this->kv.saveSnapshot();
+            ofstream clearFile("data.log", ios::trunc);
+            this_thread::sleep_for(chrono::seconds(10));
+        }
+    });
+    snapshotThread.detach();
 
     // cout << "Server started on port " << port << endl;
     Logger::info("Server started on port " + to_string(port));

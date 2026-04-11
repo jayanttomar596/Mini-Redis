@@ -1,4 +1,13 @@
 #include "KVStore.h"
+#include "../parser/CommandParser.h"
+
+#include <fstream>
+#include <string>
+#include <vector>
+#include <chrono>
+#include <mutex>
+
+using namespace std;
 
 
 long long KVStore::getCurrentTime() {
@@ -120,6 +129,73 @@ void KVStore::cleanExpired() {
         }
     }
 }
+
+
+
+
+
+
+
+void KVStore::saveSnapshot() {
+    std::lock_guard<std::mutex> lock(mtx);
+    ofstream file("snapshot.rdb");
+
+    long long now = getCurrentTime();
+
+    for (auto &p : store) {
+        const string &key = p.first;
+        const string &value = p.second.value;
+        long long expiry = p.second.expiry;
+
+        if (expiry != -1 && expiry <= now) continue;  // 🔥 add this
+
+        file << key << " " << value;
+
+        if (expiry != -1) {
+            int ttl = (expiry - now) / 1000;
+            if (ttl > 0) {
+                file << " EX " << ttl;
+            }
+        }
+
+        file << "\n";
+    }
+}
+
+
+
+
+
+
+
+
+
+void KVStore::loadSnapshot() {
+    ifstream file("snapshot.rdb");
+    if (!file.is_open()) return;
+    string line;
+
+    while (getline(file, line)) {
+        vector<string> tokens = CommandParser::parse(line);
+
+        if (tokens.size() == 2) {
+            set(tokens[0], tokens[1], -1);
+        }
+        else if (tokens.size() == 4 && tokens[2] == "EX") {
+            int ttl = stoi(tokens[3]);
+            set(tokens[0], tokens[1], ttl);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 
 
 

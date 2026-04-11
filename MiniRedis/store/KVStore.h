@@ -13,7 +13,7 @@
 
 class KVStore {
 private:
-    int capacity = 5;
+    int capacity = 500;
 
     struct Node {
         std::string value;
@@ -31,6 +31,8 @@ private:
 public:
     void set(const std::string &key, const std::string &value, int ttl = -1); // updated
     void cleanExpired();
+    void loadSnapshot();
+    void saveSnapshot();
     std::string get(const std::string &key);
     void del(const std::string &key);
 };
