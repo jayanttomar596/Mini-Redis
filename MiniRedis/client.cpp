@@ -27,11 +27,34 @@ int main() {
         return 1;
     }
 
+    // Step 1: set short timeout
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+    // Step 2: try reading server response first
+    char buffer[1024];
+    memset(buffer, 0, sizeof(buffer));
+
+    int valread = recv(sock, buffer, 1024, 0);
+
+    if (valread > 0) {
+        string response(buffer, valread);
+
+        if (response == "Server busy\n") {
+            cout << "Server is busy. Try later.\n";
+            close(sock);
+            return 0;
+        }
+    }
+
+    // Step 3: now safe to proceed
     cout << "Connected to server\n";
+
+    // Step 4: send handshake
     string hello = "CLIENT\n";
     send(sock, hello.c_str(), hello.size(), 0);
-
-    char buffer[1024];
 
     while (true) {
         cout << ">> ";
@@ -63,11 +86,21 @@ int main() {
         static string pending = "";
 
         while (true) {
+            memset(buffer, 0, sizeof(buffer));
             int valread = recv(sock, buffer, 1024, 0);
 
             if (valread <= 0) {
-                cout << "Server closed connection\n";
-                break;
+                cout << "Server is busy. Try later.\n";
+                close(sock);
+                return 0;
+            }
+
+            string response(buffer, valread);
+
+            if (response == "Server busy\n") {
+                cout << "Server is busy. Try later.\n";
+                close(sock);
+                return 0;
             }
 
             pending += string(buffer, valread);

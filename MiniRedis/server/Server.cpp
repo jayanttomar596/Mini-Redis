@@ -296,7 +296,7 @@ void Server::start(int port) {
         return;
     }
 
-    if (listen(server_fd, 5) < 0) {
+    if (listen(server_fd, SOMAXCONN) < 0) {
         perror("Listen failed");
         return;
     }
@@ -338,8 +338,15 @@ void Server::start(int port) {
             std::lock_guard<std::mutex> lock(client_mtx);
 
             if (current_clients >= MAX_CLIENTS) {
-                std::string msg = "Server busy\n";
+                string msg = "Server busy\n";
                 send(client_socket, msg.c_str(), msg.size(), 0);
+
+                // ensure message is delivered
+                shutdown(client_socket, SHUT_WR);  
+
+                // small delay (optional but safe)
+                // usleep(100000);  // 100 ms
+
                 close(client_socket);
                 continue;
             }
