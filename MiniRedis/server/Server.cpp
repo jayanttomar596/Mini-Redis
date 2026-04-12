@@ -273,6 +273,14 @@ void handleClient(int client_socket,
                     }
                 }
             }
+            else if (tokens.size() == 2 && tokens[0] == "EXISTS") {
+                int res = kv.exists(tokens[1]);
+                response = to_string(res) + "\n";
+            }
+            else if (tokens.size() == 2 && tokens[0] == "TTL") {
+                int res = kv.ttl(tokens[1]);
+                response = to_string(res) + "\n";
+            }
             else {
                 response = "Invalid Command\n";
             }

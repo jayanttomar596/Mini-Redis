@@ -201,6 +201,55 @@ void KVStore::loadSnapshot() {
 
 
 
+int KVStore::exists(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = store.find(key);
+
+    if (it == store.end()) return 0;
+
+    long long expiry = it->second.expiry;
+
+    if (expiry != -1 && getCurrentTime() > expiry) {
+        lru.erase(it->second.it);
+        store.erase(it);
+        return 0;
+    }
+
+    return 1;
+}
+
+
+
+
+
+
+int KVStore::ttl(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = store.find(key);
+
+    if (it == store.end()) return -2;
+
+    long long expiry = it->second.expiry;
+
+    if (expiry == -1) return -1;
+
+    long long remaining = expiry - getCurrentTime();
+
+    if (remaining <= 0) {
+        lru.erase(it->second.it);
+        store.erase(it);
+        return -2;
+    }
+
+    return remaining / 1000;
+}
+
+
+
+
+
 
 
 

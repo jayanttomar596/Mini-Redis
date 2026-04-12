@@ -40,6 +40,8 @@ public:
     void cleanExpired();
     void loadSnapshot();
     void saveSnapshot();
+    int exists(const std::string &key);
+    int ttl(const std::string &key);
     std::string get(const std::string &key);
     void del(const std::string &key);
 };
