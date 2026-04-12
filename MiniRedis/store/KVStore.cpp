@@ -251,6 +251,93 @@ int KVStore::ttl(const std::string &key) {
 
 
 
+int KVStore::incr(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = store.find(key);
+
+    if (it == store.end()) {
+        lru.push_front(key);
+        store[key] = {"1", -1, lru.begin()};
+        return 1;
+    }
+
+    long long expiry = it->second.expiry;
+
+    if (expiry != -1 && getCurrentTime() > expiry) {
+        lru.erase(it->second.it);
+        store.erase(it);
+
+        lru.push_front(key);
+        store[key] = {"1", -1, lru.begin()};
+        return 1;
+    }
+
+    try {
+        int val = stoi(it->second.value);
+        val++;
+
+        it->second.value = to_string(val);
+
+        // move to front (LRU)
+        lru.erase(it->second.it);
+        lru.push_front(key);
+        it->second.it = lru.begin();
+
+        return val;
+    } catch (...) {
+        return INT_MIN; // error
+    }
+}
+
+
+
+
+int KVStore::decr(const std::string &key) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    auto it = store.find(key);
+
+    if (it == store.end()) {
+        lru.push_front(key);
+        store[key] = {"-1", -1, lru.begin()};
+        return -1;
+    }
+
+    long long expiry = it->second.expiry;
+
+    if (expiry != -1 && getCurrentTime() > expiry) {
+        lru.erase(it->second.it);
+        store.erase(it);
+
+        lru.push_front(key);
+        store[key] = {"-1", -1, lru.begin()};
+        return -1;
+    }
+
+    try {
+        int val = stoi(it->second.value);
+        val--;
+
+        it->second.value = to_string(val);
+
+        lru.erase(it->second.it);
+        lru.push_front(key);
+        it->second.it = lru.begin();
+
+        return val;
+    } catch (...) {
+        return INT_MIN;
+    }
+}
+
+
+
+
+
+
+
+
 
 
 

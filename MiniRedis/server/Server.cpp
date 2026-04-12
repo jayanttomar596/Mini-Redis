@@ -281,6 +281,64 @@ void handleClient(int client_socket,
                 int res = kv.ttl(tokens[1]);
                 response = to_string(res) + "\n";
             }
+            else if (tokens.size() == 2 && tokens[0] == "INCR") {
+                int res = kv.incr(tokens[1]);
+
+                if (res == INT_MIN) {
+                    response = "ERROR: Not an integer\n";
+                } else {
+                    response = to_string(res) + "\n";
+
+                    if (!is_slave) {
+                        ofstream file("data.log", ios::app);
+                        file << line << "\n";
+                    }
+
+                    if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(slave_mtx);
+                        std::string msg = line + "\n";
+
+                        for (auto it = slaves.begin(); it != slaves.end(); ) {
+                            int s = *it;
+                            if (send(s, msg.c_str(), msg.size(), 0) < 0) {
+                                close(s);
+                                it = slaves.erase(it);
+                            } else {
+                                ++it;
+                            }
+                        }
+                    }
+                }
+            }
+            else if (tokens.size() == 2 && tokens[0] == "DECR") {
+                int res = kv.decr(tokens[1]);
+
+                if (res == INT_MIN) {
+                    response = "ERROR: Not an integer\n";
+                } else {
+                    response = to_string(res) + "\n";
+
+                    if (!is_slave) {
+                        ofstream file("data.log", ios::app);
+                        file << line << "\n";
+                    }
+
+                    if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(slave_mtx);
+                        std::string msg = line + "\n";
+
+                        for (auto it = slaves.begin(); it != slaves.end(); ) {
+                            int s = *it;
+                            if (send(s, msg.c_str(), msg.size(), 0) < 0) {
+                                close(s);
+                                it = slaves.erase(it);
+                            } else {
+                                ++it;
+                            }
+                        }
+                    }
+                }
+            }
             else {
                 response = "Invalid Command\n";
             }
@@ -484,6 +542,14 @@ void Server::startAsSlave(const std::string &ip, int port) {
             else if (tokens[0] == "DEL") {
                 kv.del(tokens[1]);
                 cout << "[SLAVE] DEL " << tokens[1] << endl; // Just to check working
+            }
+            else if (tokens[0] == "INCR") {
+                int val = kv.incr(tokens[1]);
+                cout << "[SLAVE] INCR " << tokens[1] << " → " << val << endl;
+            }
+            else if (tokens[0] == "DECR") {
+                int val = kv.decr(tokens[1]);
+                cout << "[SLAVE] DECR " << tokens[1] << " → " << val << endl;
             }
         }
     }
