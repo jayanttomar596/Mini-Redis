@@ -156,9 +156,28 @@ void handleClient(int client_socket,
                         std::lock_guard<std::mutex> lock(slave_mtx);
                         slaves.push_back(client_socket);
                     }
+
                     is_slave = true;
-                    // cout << "Slave connected\n";
                     Logger::info("Slave connected");
+
+                    // 🔥 STEP 2: SEND SNAPSHOT
+                    ifstream file("snapshot.rdb");
+
+                    if (file.is_open()) {
+                        string snapshot_data = "SNAPSHOT_START\n";
+                        string snap_line;
+
+                        while (getline(file, snap_line)) {
+                            snapshot_data += snap_line + "\n";
+                        }
+
+                        snapshot_data += "SNAPSHOT_END\n";
+
+                        send(client_socket, snapshot_data.c_str(), snapshot_data.size(), 0);
+                    }
+
+                    identified = true;
+                    continue;
                 }
                 else if (line == "CLIENT") {
                     // cout << "Client connected\n";
@@ -477,6 +496,7 @@ void Server::start(int port) {
 
 
 void Server::startAsSlave(const std::string &ip, int port) {
+    bool loading_snapshot = false;
 
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -514,9 +534,33 @@ void Server::startAsSlave(const std::string &ip, int port) {
             string line = pending.substr(0, pos);
             pending.erase(0, pos + 1);
 
+            if (line == "SNAPSHOT_START") {
+                loading_snapshot = true;
+                continue;
+            }
+
+            if (line == "SNAPSHOT_END") {
+                loading_snapshot = false;
+                cout << "[SLAVE] Snapshot loaded\n";
+                continue;
+            }
+
             vector<string> tokens = CommandParser::parse(line);
 
             if (tokens.empty()) continue;
+
+
+
+            if (loading_snapshot) {
+                if (tokens.size() == 2) {
+                    kv.set(tokens[0], tokens[1]);
+                }
+                else if (tokens.size() == 4 && tokens[2] == "EX") {
+                    int ttl = stoi(tokens[3]);
+                    kv.set(tokens[0], tokens[1], ttl);
+                }
+                continue;
+            }
 
 
             if (tokens.size() >= 1 && tokens[0] == "SET") {
