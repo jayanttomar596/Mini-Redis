@@ -63,6 +63,10 @@ void KVStore::set(const std::string &key, const std::string &value, int ttl) {
 
     lru.push_front(key);
     store[key] = {value, expiry_time, lru.begin()};
+
+    if (expiry_time != -1) {
+        expiryHeap.push({expiry_time, key});
+    }
 }
 
 
@@ -118,14 +122,19 @@ void KVStore::cleanExpired() {
 
     long long now = getCurrentTime();
 
-    for (auto it = store.begin(); it != store.end(); ) {
-        long long expiry = it->second.expiry;
+    while (!expiryHeap.empty()) {
+        auto [expiry, key] = expiryHeap.top();
 
-        if (expiry != -1 && now > expiry) {
+        if (expiry > now) break;
+
+        expiryHeap.pop();
+
+        auto it = store.find(key);
+
+        // skip if already deleted or updated
+        if (it != store.end() && it->second.expiry == expiry) {
             lru.erase(it->second.it);
-            it = store.erase(it);
-        } else {
-            ++it;
+            store.erase(it);
         }
     }
 }

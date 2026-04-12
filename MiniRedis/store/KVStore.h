@@ -4,6 +4,7 @@
 #include <list>
 #include <mutex>
 #include <chrono>
+#include <queue>
 
 
 
@@ -20,6 +21,12 @@ private:
         long long expiry;   // epoch time (ms), -1 = no expiry
         std::list<std::string>::iterator it;
     };
+
+    std::priority_queue<
+        std::pair<long long, std::string>,
+        std::vector<std::pair<long long, std::string>>,
+        std::greater<>
+    > expiryHeap;
 
     std::unordered_map<std::string, Node> store;
     std::list<std::string> lru;
