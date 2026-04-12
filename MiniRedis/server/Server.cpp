@@ -466,7 +466,12 @@ void Server::startAsSlave(const std::string &ip, int port) {
                 else if (tokens.size() == 3) {
                     kv.set(tokens[1], tokens[2]);
                 }
-                cout << "[SLAVE] SET " << tokens[1] << " = " << tokens[2] << endl; // Just to check working 
+                if (tokens.size() == 5 && tokens[3] == "EX") {
+                    cout << "[SLAVE] SET " << tokens[1] << " = " << tokens[2] 
+                        << " EX " << tokens[4] << endl;
+                } else {
+                    cout << "[SLAVE] SET " << tokens[1] << " = " << tokens[2] << endl;
+                } // Just to check working 
             }
             else if (tokens[0] == "DEL") {
                 kv.del(tokens[1]);
