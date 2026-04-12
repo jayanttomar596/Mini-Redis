@@ -89,8 +89,14 @@ int main() {
             memset(buffer, 0, sizeof(buffer));
             int valread = recv(sock, buffer, 1024, 0);
 
-            if (valread <= 0) {
-                cout << "Server is busy. Try later.\n";
+            if (valread == 0) {
+                cout << "Server disconnected\n";
+                close(sock);
+                return 0;
+            }
+
+            if (valread < 0) {
+                perror("recv failed");
                 close(sock);
                 return 0;
             }
