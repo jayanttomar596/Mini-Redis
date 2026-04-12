@@ -1,12 +1,12 @@
 # Mini Redis (In-Memory Key-Value Store in C++)
 
-### Multithreaded TCP Server • LRU Cache • TTL Expiry • WAL Persistence
+### Multithreaded TCP Server • LRU Cache • TTL (Heap Optimized) • WAL • Snapshot (RDB) • Replication • Initial Sync
 
-This project implements a **Redis-like in-memory key-value store written in C++** that demonstrates several core backend system design concepts.
+This project implements a **Redis-like in-memory key-value store written in C++** that demonstrates advanced backend system design concepts.
 
-It supports **fast O(1) key-value operations**, **multithreaded client handling**, **Write-Ahead Logging (WAL)** for persistence, **LRU-based eviction**, and **TTL-based expiry**.
+It supports **O(1) key-value operations**, **multithreaded client handling**, **Write-Ahead Logging (WAL)**, **snapshot-based persistence**, **LRU eviction**, **heap-optimized TTL expiry**, and **master-slave replication with initial synchronization**.
 
-The system is designed with **clean modular architecture, concurrency control, and performance optimization**, making it a strong demonstration of **DSA, Operating Systems, Computer Networks, and DBMS concepts**.
+The system is designed with **modular architecture, concurrency control, fault handling, and performance optimization**, making it a strong demonstration of **DSA, Operating Systems, Computer Networks, and DBMS concepts**.
 
 ---
 
@@ -21,62 +21,161 @@ https://youtu.be/kNOoiKyg9EY
 
 ## Fast Key-Value Store
 - Uses **unordered_map (hash map)** for near O(1) access
-- Supports core operations:
+- Supports operations:
   - `SET key value`
   - `GET key`
   - `DEL key`
+  - `EXISTS key`
+  - `TTL key`
+  - `INCR key`
+  - `DECR key`
+
+---
 
 ## TCP Server (Client-Server Architecture)
 - Built using low-level **socket programming**
 - Uses:
   - `socket()`, `bind()`, `listen()`, `accept()`
-- Enables remote command execution via clients
+- Supports multiple clients over network
+
+---
 
 ## Multithreaded Request Handling
 - Each client handled in a **separate thread**
 - Supports concurrent connections
-- Improves system scalability
+- Improves responsiveness and throughput
+
+---
+
+## Connection Control
+- Maximum client limit enforced
+- Prevents server overload
+- Returns `"Server busy"` when limit exceeded
+
+---
+
+## Graceful Shutdown
+- Handles `Ctrl + C` using signal handling
+- Stops accepting new connections
+- Closes sockets cleanly
+- Prevents abrupt termination issues
+
+---
 
 ## Thread Safety
-- Implemented using:
+- Uses:
   - `std::mutex`
-  - `lock_guard`
-- Prevents race conditions in shared data access
+  - `std::lock_guard`
+- Ensures safe concurrent access to shared data
 
-## Write-Ahead Logging (Persistence)
+---
+
+## Write-Ahead Logging (WAL)
 - All write operations logged to:
-
-
 data.log
+- Ensures durability
+- Enables recovery after crash
 
+---
 
-- On restart:
-- Server replays log
-- Restores previous state
+## Snapshot Persistence (RDB)
+- Periodically saves full database state to:
+snapshot.rdb
+
+- Runs every 10 seconds
+- Improves startup time significantly
+
+---
+
+## WAL + Snapshot Integration
+- Hybrid persistence model:
+  - Snapshot → full database state
+  - WAL → recent changes
+
+Startup flow:
+1. Load snapshot
+2. Replay WAL
+
+---
+
+## WAL Compaction
+- After snapshot:
+  - WAL (`data.log`) is cleared
+- Prevents unbounded log growth
+
+---
 
 ## LRU Cache (Memory Management)
 - Implements **Least Recently Used eviction**
 - Uses:
-- `unordered_map` + `doubly linked list`
-- Automatically removes least used keys when capacity is exceeded
+  - `unordered_map` + `doubly linked list`
+- Removes least recently accessed keys when capacity is exceeded
 
-## TTL Expiry (Time-To-Live)
-- Supports key expiration:
+---
 
-
+## TTL Expiry (Heap Optimized)
+- Supports:
 SET key value EX seconds
 
-
 - Uses:
-- Timestamp-based expiry
-- Lazy deletion during access
+  - **Min-heap (priority queue)** for expiry tracking
+- Complexity improved:
+  - From O(n) → O(log n)
+- Efficient expiration without full scan
+
+---
+
+## Background Expiry Thread
+- Runs periodically
+- Removes expired keys using heap
+- Avoids blocking main operations
+
+---
+
+## Logging System
+- Replaced raw `cout` with structured logging:
+  - INFO
+  - DEBUG
+  - ERROR
+- Includes timestamps
+- Improves observability and debugging
+
+---
+
+## Replication (Master-Slave)
+
+### Command-Based Replication
+- Master forwards write commands:
+  - SET
+  - DEL
+  - INCR
+  - DECR
+
+- Slave re-executes commands
+
+---
+
+## Initial Sync (State Synchronization)
+- When slave connects:
+  1. Master sends full snapshot
+  2. Slave loads snapshot
+  3. Then receives live updates
+
+- Ensures consistency for late-joining slaves
+
+---
+
+## Fault Handling
+- Detects:
+  - Client disconnect
+  - Slave disconnect
+  - Socket errors
+- Removes dead connections safely
 
 ---
 
 # System Architecture
-
 ```
-
 Client
 ↓
 TCP Server
@@ -85,28 +184,34 @@ Command Parser
 ↓
 KV Store (RAM)
 ↓
-WAL (data.log)
-
+Persistence Layer
+├── WAL (data.log)
+└── Snapshot (snapshot.rdb)
+↓
+Replication Layer
+└── Slave Nodes
 ```
 
 
 
 ---
 
-## Components
+# Components
 
 | Layer | Responsibility |
 |------|---------------|
 | Client | Sends commands |
-| Server | Handles TCP connections |
-| CommandParser | Parses input commands |
-| KVStore | Stores key-value data |
-| Logger (WAL) | Logs operations for persistence |
+| Server | Handles TCP connections and routing |
+| CommandParser | Parses input into tokens |
+| KVStore | Core data storage + LRU + TTL |
+| Logger | Structured logging |
+| WAL | Durable logging of writes |
+| Snapshot | Full state persistence |
+| Replication | Sync between master and slaves |
 
 ---
 
 # Project Structure
-
 ```
 MiniRedis/
 │
@@ -128,10 +233,9 @@ MiniRedis/
 │
 ├── main.cpp
 ├── client.cpp
-└── data.log
+├── data.log
+└── snapshot.rdb
 ```
-
-
 
 
 
@@ -139,80 +243,89 @@ MiniRedis/
 
 # How the System Works
 
-## Request Handling
+## Request Flow
 
-When a client sends a command:
-
-
+Example:
 SET name Jayant
 
 
-Steps:
 
-1. Client sends request via TCP  
-2. Server receives raw input  
-3. CommandParser tokenizes input  
-4. KVStore executes operation  
-5. Response sent back to client  
+Steps:
+1. Client sends command via TCP
+2. Server receives raw input
+3. CommandParser tokenizes input
+4. KVStore executes operation
+5. Response returned to client
+6. WAL updated (if write operation)
+7. Command forwarded to slaves (if master)
 
 ---
 
 ## Persistence Flow
 
-For write operations:
-
-
-SET / DEL
+### Write Operation:
+SET / DEL / INCR / DECR
 
 
 Steps:
-
-1. Operation executed in memory  
-2. Logged in `data.log`  
-3. On restart → log replay restores state  
-
----
-
-## LRU Eviction
-
-When capacity is exceeded:
-
-1. Least recently used key identified  
-2. Removed from cache  
-3. New key inserted  
+1. Execute in memory
+2. Append to WAL (`data.log`)
+3. Forward to slaves
 
 ---
 
-## TTL Expiry
+### Snapshot Flow:
 
-For command:
+1. Periodically save full state
+2. Clear WAL
+3. Maintain compact persistence
 
+---
 
+## TTL Expiry Flow
 SET otp 1234 EX 10
 
 
 Steps:
+1. Store expiry timestamp
+2. Push into min-heap
+3. Background thread checks heap
+4. Removes expired keys efficiently
 
-1. Expiry timestamp stored  
-2. On GET:
-- Check expiry
-- If expired → delete key  
+---
+
+## Replication Flow
+
+1. Slave connects to master
+2. Master sends snapshot
+3. Slave loads snapshot
+4. Master sends live commands
+5. Slave replays commands
 
 ---
 
 # Example Commands
 
 ### Basic Operations
-```
 SET name Jayant
 GET name
 DEL name
-```
 
-### TTL Example
-```
+### TTL
 SET otp 1234 EX 10
-```
+TTL otp
+
+
+
+### Existence
+EXISTS name
+
+
+### Increment / Decrement
+
+INCR counter
+DECR counter
+
 
 
 
@@ -225,8 +338,11 @@ SET otp 1234 EX 10
 | SET | O(1) |
 | GET | O(1) |
 | DEL | O(1) |
+| EXISTS | O(1) |
+| TTL | O(1) |
+| INCR / DECR | O(1) |
 | LRU Update | O(1) |
-| TTL Check | O(1) |
+| TTL Expiry | O(log n) |
 
 ---
 
@@ -234,22 +350,26 @@ SET otp 1234 EX 10
 
 - HashMap (unordered_map)
 - Doubly Linked List (LRU)
+- Min Heap (priority queue)
 - TCP Socket Programming
 - Multithreading
 - Mutex Synchronization
 - Write-Ahead Logging
-- Lazy Expiry Mechanism
+- Snapshot Persistence
+- Replication Systems
+- Event-driven Expiry
 - System Design Principles
 
 ---
 
 # Future Improvements
 
-- Master-Slave Replication
-- Read scaling using replicas
-- Snapshot-based persistence
-- REST API interface
-- Distributed architecture
+- Replication ACK system (reliability)
+- Event-driven server (epoll / select)
+- Pipelining support
+- Distributed sharding
+- REST API / Web dashboard
+- Metrics and monitoring
 
 ---
 
@@ -260,10 +380,11 @@ Built a **production-style backend system** combining:
 - Networking
 - Concurrency
 - Memory management
-- Persistence
-- Caching strategies
+- Persistence (WAL + Snapshot)
+- Replication and synchronization
+- Performance optimization
 
-This project closely mirrors the design principles of **real-world Redis**.
+This project closely reflects the architecture of **real-world Redis and distributed systems**.
 
 ---
 
@@ -278,6 +399,16 @@ Focus Areas:
 - Distributed Systems
 - System Design
 - Performance Optimization
+
+
+
+
+
+
+
+
+
+
 
 
 
