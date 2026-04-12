@@ -307,12 +307,12 @@ Steps:
 # Example Commands
 
 ### Basic Operations
-SET name Jayant
-GET name
+SET name Jayant /
+GET name /
 DEL name
 
 ### TTL
-SET otp 1234 EX 10
+SET otp 1234 EX 10 /
 TTL otp
 
 
@@ -323,7 +323,7 @@ EXISTS name
 
 ### Increment / Decrement
 
-INCR counter
+INCR counter /
 DECR counter
 
 
