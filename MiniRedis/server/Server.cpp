@@ -100,7 +100,8 @@ void handleClient(int client_socket,
                   vector<int> &slaves,
                   std::mutex &slave_mtx,
                   int &current_clients,
-                  std::mutex &client_mtx) {
+                  std::mutex &client_mtx,
+                std::mutex &wal_mtx) {
     bool is_slave = false;
     bool identified = false; 
     char buffer[1024];
@@ -219,6 +220,7 @@ void handleClient(int client_socket,
                     }
                     kv.set(tokens[1], tokens[2], ttl);
                     if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(wal_mtx); // Protect file IO
                         ofstream file("data.log", ios::app);
                         file << line << "\n";
                     }
@@ -232,6 +234,7 @@ void handleClient(int client_socket,
                     kv.set(tokens[1], tokens[2]);
 
                     if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(wal_mtx); // Protect file IO
                         ofstream file("data.log", ios::app);
                         file << line << "\n";
                     }
@@ -268,6 +271,7 @@ void handleClient(int client_socket,
                 bool is_valid = true; 
                 kv.del(tokens[1]);
                 if (!is_slave) {
+                    std::lock_guard<std::mutex> lock(wal_mtx); // Protect file IO
                     ofstream file("data.log", ios::app);
                     file << line << "\n";
                 }
@@ -309,6 +313,7 @@ void handleClient(int client_socket,
                     response = to_string(res) + "\n";
 
                     if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(wal_mtx); // Protect file IO
                         ofstream file("data.log", ios::app);
                         file << line << "\n";
                     }
@@ -338,6 +343,7 @@ void handleClient(int client_socket,
                     response = to_string(res) + "\n";
 
                     if (!is_slave) {
+                        std::lock_guard<std::mutex> lock(wal_mtx); // Protect file IO
                         ofstream file("data.log", ios::app);
                         file << line << "\n";
                     }
@@ -376,6 +382,7 @@ void handleClient(int client_socket,
 void Server::start(int port) {
     global_server = this;
     signal(SIGINT, signalHandler);
+    signal(SIGPIPE, SIG_IGN);
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     int opt = 1;
@@ -417,7 +424,10 @@ void Server::start(int port) {
     thread snapshotThread([this]() {
         while (isRunning()) {
             this->kv.saveSnapshot();
-            ofstream clearFile("data.log", ios::trunc);
+            {
+                std::lock_guard<std::mutex> lock(this->wal_mtx);
+                ofstream clearFile("data.log", ios::trunc); 
+            }
             this_thread::sleep_for(chrono::seconds(10));
         }
     });
@@ -477,7 +487,8 @@ void Server::start(int port) {
              this->slave_sockets,
              this->slave_mtx,
              this->current_clients,
-             this->client_mtx);
+             this->client_mtx,
+             this->wal_mtx);
         });
         t.detach();
     }

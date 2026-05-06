@@ -17,6 +17,7 @@ private:
     std::atomic<bool> running{true};
 
     std::mutex client_mtx;
+    std::mutex wal_mtx;
 
 public:
     void start(int port);
