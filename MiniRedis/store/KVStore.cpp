@@ -146,17 +146,25 @@ void KVStore::cleanExpired() {
 
 
 void KVStore::saveSnapshot() {
-    std::lock_guard<std::mutex> lock(mtx);
-    ofstream file("snapshot.rdb");
-
+    std::unordered_map<std::string, Node> store_copy;
     long long now = getCurrentTime();
 
-    for (auto &p : store) {
+    // STEP 1: The "Short-Lock"
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        store_copy = store; // O(N) memory copy is extremely fast
+    } // Lock is instantly destroyed and released here!
+
+    // STEP 2: The Unlocked Disk Write
+    // The main server can now continue processing clients while this writes to disk.
+    ofstream file("snapshot.rdb");
+
+    for (auto &p : store_copy) {
         const string &key = p.first;
         const string &value = p.second.value;
         long long expiry = p.second.expiry;
 
-        if (expiry != -1 && expiry <= now) continue;  // 🔥 add this
+        if (expiry != -1 && expiry <= now) continue; 
 
         file << key << " " << value;
 

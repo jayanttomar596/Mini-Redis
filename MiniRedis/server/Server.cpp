@@ -423,11 +423,11 @@ void Server::start(int port) {
 
     thread snapshotThread([this]() {
         while (isRunning()) {
-            this->kv.saveSnapshot();
             {
                 std::lock_guard<std::mutex> lock(this->wal_mtx);
                 ofstream clearFile("data.log", ios::trunc); 
             }
+            this->kv.saveSnapshot();
             this_thread::sleep_for(chrono::seconds(10));
         }
     });
