@@ -20,15 +20,10 @@ private:
     }
 
 public:
-    static void info(const string &msg) {
-        cout << "[INFO]  [" << getTime() << "] " << msg << endl;
-    }
+    static void info(const string &msg) ;
 
-    static void error(const string &msg) {
-        cout << "[ERROR] [" << getTime() << "] " << msg << endl;
-    }
+    static void error(const string &msg) ;
 
-    static void debug(const string &msg) {
-        cout << "[DEBUG] [" << getTime() << "] " << msg << endl;
-    }
+    static void debug(const string &msg) ;
+    
 };
