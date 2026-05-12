@@ -1,0 +1,17 @@
+.DS_Store
+
+# C++ build outputs
+MiniRedis/app
+MiniRedis/client
+MiniRedis/main
+*.o
+
+# Runtime persistence artifacts
+MiniRedis/data.log
+MiniRedis/snapshot.rdb
+data.log
+snapshot.rdb
+
+# Node / dashboard
+web-dashboard/node_modules/
+npm-debug.log*
