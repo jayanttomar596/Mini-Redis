@@ -1,75 +1,54 @@
-🚀 1. Compile (only once or after code changes)
-
-Run in project folder:
-
-g++ -std=c++20 main.cpp store/KVStore.cpp parser/CommandParser.cpp server/Server.cpp utils/Logger.cpp -o app
-g++ -std=c++20 client.cpp -o client
-
-
-Terminal 1
-./app
-Server started on port 8080
-
-👉 Keep this terminal OPEN
+Prerequisites:
+Make sure your terminal is open in the MiniRedis folder. If not, enter the command:
+Bash - cd MiniRedis
 
 
 
-Terminal 2
-./app slave 8080
+1. Compile (Only once or after code changes)
+Run this single command in your project folder to build both the server and the client:
+Bash - make
 
-
-
-Terminal 3
-./client
+(If you ever need to clear out the compiled files to start fresh, simply run make clean.)
 
 
 
 
+2. Start Master Server (Terminal 1)
+Bash - ./app
 
-
-
-make sure terminal is open on MiniRedis folder 
-if not enter command - 
-cd MiniRedis
-
-
-
-
-
-2. Start Server (Terminal 1)
-
-./app
+(Alternatively, you can just run make run to compile and start the master server in one step.)
 
 👉 Output:
-
 Server started on port 8080
-
 👉 Keep this terminal OPEN
 
 
 
 
+3. Start Slave Server (Terminal 2 - Optional)
+To test your master-slave replication, open a second terminal, ensure you are in the MiniRedis folder, and run:
+
+Bash - ./app slave 8080
+👉 Keep this terminal OPEN
 
 
 
-🚀 3. Start Client (Terminal 2)
 
+4. Start Client (Terminal 3)
+Open a third terminal, ensure you are in the MiniRedis folder, and run:
+
+Bash
 ./client
-
 👉 You’ll see:
-
 >>
 
 
 
+5. Run Commands (Terminal 3)
+Test your fast key-value store with the following commands:
 
-
-
-🚀 4. Run Commands (Terminal 2)
+Plaintext
 SET name Jayant
 GET name
 DEL name
 GET name
-
-
-
