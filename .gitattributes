@@ -1,0 +1,4 @@
+# Tell GitHub to treat the web-dashboard folder as documentation/vendored
+# This removes it from the language statistics calculation
+web-dashboard/* linguist-documentation
+web-dashboard/public/* linguist-documentation
