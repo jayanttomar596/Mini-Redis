@@ -13,8 +13,10 @@ To make the system fully observable and accessible, it features a **dual-interfa
 # Demo
 
 ## Working Video
-https://youtu.be/UEt7pb8lUZ0
 
+- **Raw TCP Terminal:** https://youtu.be/UEt7pb8lUZ0
+- **Web Dashboard:** - https://youtu.be/PY0NDeWMnAw?si=_Oiqgp-zre6EgUOf
+  
 ---
 
 # Project Highlights
