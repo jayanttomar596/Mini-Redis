@@ -14,7 +14,7 @@
 
 class KVStore {
 private:
-    int capacity = 500;
+    int capacity = 1000;
 
     struct Node {
         std::string value;
