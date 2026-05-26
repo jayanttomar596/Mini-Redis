@@ -11,7 +11,7 @@ private:
     std::vector<int> slave_sockets;
     std::mutex slave_mtx;
 
-    int MAX_CLIENTS = 100;
+    int MAX_CLIENTS = 500;
     int current_clients = 0;
 
     std::atomic<bool> running{true};
