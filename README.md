@@ -140,7 +140,7 @@ Startup flow:
 
 ### Concurrent Client Support
 
-- Maximum Concurrent Clients Supported: 500
+- Maximum Concurrent Clients Supported: 500 (can be changed , for testing I kept MAX_CLIENTS = 500)
 - Clients Successfully Accepted: 500/500
 - Rejection Rate: 0%
 - Connection Verification: All clients validated through live GET requests
