@@ -136,6 +136,59 @@ Startup flow:
 ---
 
 
+## Performance Benchmarks
+
+### Concurrent Client Support
+
+- Maximum Concurrent Clients Supported: 500
+- Clients Successfully Accepted: 500/500
+- Rejection Rate: 0%
+- Connection Verification: All clients validated through live GET requests
+
+### Single-Client Baseline Performance
+
+| Operation | Avg Latency | P99 Latency | Throughput |
+|---|---|---|---|
+| GET | 0.010 ms | 0.022 ms | 93,431 ops/sec |
+| SET | 0.017 ms | 0.060 ms | 60,118 ops/sec |
+| SET EX (TTL) | 0.018 ms | 0.059 ms | ~55,000 ops/sec |
+
+### Concurrent Stress Test Performance
+
+| Clients | Throughput | Avg Latency | P95 Latency | P99 Latency | Max Latency |
+|---|---|---|---|---|---|
+| 10 | 4,773 ops/sec | 0.022 ms | 0.030 ms | 0.030 ms | 0.033 ms |
+| 50 | 6,956 ops/sec | 0.207 ms | 0.426 ms | 0.457 ms | 0.514 ms |
+| 100 | 7,258 ops/sec | 0.287 ms | 0.638 ms | 0.743 ms | 0.753 ms |
+| 200 | 6,587 ops/sec | 0.265 ms | 0.641 ms | 0.902 ms | 1.101 ms |
+| 500 | 7,037 ops/sec | 0.305 ms | 0.615 ms | 0.876 ms | 1.270 ms |
+
+### Data Structure Complexity
+
+| Feature | Complexity |
+|---|---|
+| GET | O(1) average |
+| SET | O(1) average |
+| DELETE | O(1) average |
+| TTL Insert | O(log n) |
+| TTL Expiry | O(log n) |
+| LRU Update | O(1) |
+
+### Performance Highlights
+
+- Sustained sub-millisecond average latency under 500 concurrent clients
+- Maintained p99 latency below 1 ms at maximum tested load
+- Achieved 93K+ GET ops/sec on single connection benchmark
+- TTL-enabled writes introduce negligible overhead compared to standard SET operations
+- Stable throughput maintained under heavy concurrent access
+
+### Benchmark Screenshots
+
+![Concurrent Benchmark](Images/concurrent_benchmark.png)
+
+![Throughput Benchmark](Images/throughput_benchmark.png)
+
+
 # System Architecture
 
 ```
