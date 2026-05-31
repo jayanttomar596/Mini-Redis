@@ -14,6 +14,7 @@ To make the system fully observable and accessible, it features a **dual-interfa
 
 ## Working Video
 
+- **Detail Final Video:** - https://youtu.be/doOxAjvSMHA?si=tC-GS-1Lszt75k5M
 - **Raw TCP Terminal:** https://youtu.be/UEt7pb8lUZ0
 - **Web Dashboard:** - https://youtu.be/PY0NDeWMnAw?si=_Oiqgp-zre6EgUOf
   
