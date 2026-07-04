@@ -1,5 +1,7 @@
 # Mini Redis (In-Memory Key-Value Store)
 
+[![Live Dashboard Demo](https://img.shields.io/badge/Live%20Dashboard-Play%20Now!-2ea44f?style=for-the-badge)](https://mini-redis-wdls.onrender.com/)
+
 ### TCP Server • LRU Cache • TTL (Heap Optimized) • WAL • Snapshot (RDB) • Replication • Web Dashboard
 
 This project implements a **Redis-like in-memory key-value store written in C++** that demonstrates advanced backend system design concepts.
@@ -12,12 +14,13 @@ To make the system fully observable and accessible, it features a **dual-interfa
 
 # Demo
 
+🚀 **[Live Web Dashboard](https://mini-redis-wdls.onrender.com/)** - *Open this link in multiple tabs to see real-time multi-client synchronization in action!*
+
 ## Working Video
 
 - **Detail Final Video:** - https://youtu.be/doOxAjvSMHA?si=tC-GS-1Lszt75k5M
 - **Raw TCP Terminal:** https://youtu.be/UEt7pb8lUZ0
 - **Web Dashboard:** - https://youtu.be/PY0NDeWMnAw?si=_Oiqgp-zre6EgUOf
-  
 ---
 
 # Project Highlights
