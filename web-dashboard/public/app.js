@@ -224,6 +224,13 @@ function connectSocket() {
 
   state.socket.addEventListener("open", () => {
     appendTerminalLine("system", "bridge", "WebSocket bridge is open.");
+
+    if (state.pingInterval) clearInterval(state.pingInterval);
+    state.pingInterval = setInterval(() => {
+      if (state.socket?.readyState === WebSocket.OPEN) {
+        state.socket.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 5000); // Send a ping every 5 seconds
   });
 
   state.socket.addEventListener("message", (event) => {

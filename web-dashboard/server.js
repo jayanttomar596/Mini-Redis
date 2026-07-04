@@ -302,6 +302,7 @@ function sendTcpBatch(commands) {
 class MiniRedisSession {
   constructor(id) {
     this.id = id;
+    this.lastPing = Date.now();
     this.socket = null;
     this.buffer = "";
     this.queue = [];
@@ -796,6 +797,10 @@ server.on("upgrade", (req, socket) => {
 
       try {
         const message = JSON.parse(frame.text);
+        if (message.type === "ping") {
+          session.lastPing = Date.now();
+          return; 
+        }
         if (message.type === "status") {
           sendWs(socket, {
             type: "status",
@@ -860,3 +865,26 @@ server.listen(DASHBOARD_PORT, DASHBOARD_HOST, async () => {
   console.log(`Mini Redis dashboard: http://${DASHBOARD_HOST}:${DASHBOARD_PORT}`);
   console.log(`Bridge target: ${REDIS_HOST}:${REDIS_PORT}`);
 });
+
+
+
+
+setInterval(() => {
+  const now = Date.now();
+  let changed = false;
+
+  for (const session of sessions.values()) {
+    // If we haven't heard a ping in 15 seconds, the tab is dead/reloaded.
+    if (now - session.lastPing > 15000) {
+      console.log(`Reaping ghost session: ${session.id}`);
+      session.wsSocket?.destroy(); // Kill the browser socket
+      session.close();             // Kill the C++ socket
+      changed = true;
+    }
+  }
+
+  // Force a real-time UI update if we killed ghosts
+  if (changed) broadcastSessions(); 
+}, 5000); // Check every 5 seconds
+
+
