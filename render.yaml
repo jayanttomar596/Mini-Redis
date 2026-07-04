@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mini-redis-control-plane
+    env: docker
+    plan: free
+    region: oregon # or your closest data center
+    envVars:
+      - key: DASHBOARD_PORT
+        value: 5173
