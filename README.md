@@ -1,4 +1,4 @@
-# Mini Redis (In-Memory Key-Value Store)
+# Mini Redis --- Multithreaded Cache Engine
 
 [![Live Dashboard Demo](https://img.shields.io/badge/Live%20Dashboard-Play%20Now!-2ea44f?style=for-the-badge)](https://mini-redis-wdls.onrender.com/)
 
